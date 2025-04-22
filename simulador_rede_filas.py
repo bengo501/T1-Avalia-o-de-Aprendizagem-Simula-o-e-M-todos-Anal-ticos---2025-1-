@@ -141,13 +141,23 @@ class SimuladorRede:
                 fila_atual=nome_fila,
                 proxima_fila=fila.obter_proxima_fila()
             )
-
-        if len(fila.fila) < fila.capacidade:
-            fila.fila.append(cliente)
-            if fila.tempo_chegada_min > 0 or fila.tempo_chegada_max > 0:
-                self.agendar_evento("chegada", fila.gerar_tempo_chegada(self.relogio), nome_fila)
         else:
+            # Atualiza a fila atual do cliente
+            cliente.fila_atual = nome_fila
+            # Determina a próxima fila para onde o cliente será direcionado
+            cliente.proxima_fila = fila.obter_proxima_fila()
+
+        # Verifica se a fila está cheia
+        if len(fila.fila) >= fila.capacidade:
             fila.clientes_perdidos += 1
+            return
+
+        # Adiciona o cliente à fila
+        fila.fila.append(cliente)
+        
+        # Agenda a próxima chegada se esta fila tem taxa de chegada
+        if fila.tempo_chegada_min > 0 or fila.tempo_chegada_max > 0:
+            self.agendar_evento("chegada", fila.gerar_tempo_chegada(self.relogio), nome_fila)
 
         # Tenta iniciar o serviço para o cliente recém-chegado
         for i in range(fila.num_servidores):
@@ -181,7 +191,14 @@ class SimuladorRede:
 
         # Direciona para a próxima fila ou para fora do sistema
         if cliente.proxima_fila:
-            self.processar_chegada(cliente.proxima_fila, cliente)
+            # Cria uma cópia do cliente para enviar para a próxima fila
+            novo_cliente = Cliente(
+                id=cliente.id,
+                tempo_chegada=self.relogio,
+                fila_atual=cliente.proxima_fila,
+                proxima_fila=None  # Será definido quando chegar à próxima fila
+            )
+            self.processar_chegada(cliente.proxima_fila, novo_cliente)
         else:
             pass  # Cliente sai do sistema
 
@@ -204,7 +221,11 @@ class SimuladorRede:
             # Atualiza o tempo em estado para todas as filas
             for fila in self.filas.values():
                 tempo_decorrido = self.relogio - fila.ultimo_tempo_evento
-                fila.tempo_em_estado[len(fila.fila)] += tempo_decorrido
+                # Conta clientes em serviço + clientes na fila
+                num_clientes_na_fila = len(fila.fila)
+                num_clientes_em_servico = sum(1 for s in fila.servidores if s[0] is not None)
+                estado_atual = num_clientes_na_fila + num_clientes_em_servico
+                fila.tempo_em_estado[estado_atual] += tempo_decorrido
                 fila.ultimo_tempo_evento = self.relogio
 
             if tipo_evento == "chegada":
