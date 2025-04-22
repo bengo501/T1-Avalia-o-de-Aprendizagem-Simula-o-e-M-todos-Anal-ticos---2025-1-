@@ -1,0 +1,35 @@
+# Configuração da rede de filas
+# Cada fila é definida com seu tipo (G/G/s/c), tempos de chegada/serviço e roteamento
+queues:
+  # Fila 1: G/G/1 (1 servidor, sem limite de capacidade)
+  # Chegadas entre 2.0 e 4.0, serviço entre 1.0 e 2.0
+  fila1:
+    type: "G/G/1"
+    arrival:
+      min: 2.0
+      max: 4.0
+    service:
+      min: 1.0
+      max: 2.0
+    routing:
+      - fila2: 1.0  # 100% dos clientes vão para a fila2
+
+  # Fila 2: G/G/2/5 (2 servidores, capacidade 5)
+  # Serviço entre 4.0 e 8.0
+  fila2:
+    type: "G/G/2/5"
+    service:
+      min: 4.0
+      max: 8.0
+    routing:
+      - fila3: 1.0  # 100% dos clientes vão para a fila3
+
+  # Fila 3: G/G/2/10 (2 servidores, capacidade 10)
+  # Serviço entre 5.0 e 15.0
+  # Última fila da rede (sem roteamento)
+  fila3:
+    type: "G/G/2/10"
+    service:
+      min: 5.0
+      max: 15.0
+    routing: []  # Fim da rede 
