@@ -46,9 +46,10 @@ class Fila:
         self.nome = nome
         self.tipo = config['type']
         # Extrai o número de servidores do tipo da fila (ex: G/G/2/5 -> 2 servidores)
-        self.num_servidores = int(self.tipo.split('/')[1])
+        partes_tipo = self.tipo.split('/')
+        self.num_servidores = int(partes_tipo[2]) if len(partes_tipo) > 2 else 1
         # Extrai a capacidade da fila (ex: G/G/2/5 -> capacidade 5)
-        self.capacidade = int(self.tipo.split('/')[2]) if len(self.tipo.split('/')) > 2 else float('inf')
+        self.capacidade = int(partes_tipo[3]) if len(partes_tipo) > 3 else float('inf')
         
         # Configuração dos tempos de chegada e serviço
         self.tempo_chegada_min = config.get('arrival', {}).get('min', 0)
